@@ -1,0 +1,20 @@
+{
+  "name": "email-qa",
+  "version": "0.1.0",
+  "description": "Checks email HTML for Liquid balance, broken links, and required UTM tags.",
+  "actions": [
+    {
+      "name": "qa_message",
+      "method": "POST",
+      "path": "http://localhost:9200/actions/qa_message",
+      "input": {
+        "type": "object",
+        "properties": {
+          "message_id": { "type": "string" },
+          "html": { "type": "string" }
+        },
+        "required": ["html"]
+      }
+    }
+  ]
+}

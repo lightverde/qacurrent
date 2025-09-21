@@ -1,0 +1,25 @@
+# Default application configuration
+applications:
+  - id: "app"
+    name: "Default Application"
+    description: "Default application for testing"
+    privacyKeys:
+      - "default-key"
+      - "public"
+      - "priv"
+
+# Registry of agents we can orchestrate
+registry:
+  email-qa:
+    options:
+      - name: "DUMMY"
+        type: "string"
+        description: "placeholder so 'options' is non-empty"
+    runtime:
+      type: "executable"
+      command:
+        - "bash"
+        - "-lc"
+        - "cd /Users/jacquelynclifford/coral-agent-mvp && source .venv/bin/activate && exec uvicorn agents.email_qa.app:app --host 127.0.0.1 --port 9200"
+      environment:
+        - option: "DUMMY"
