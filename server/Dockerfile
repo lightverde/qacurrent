@@ -1,25 +1,22 @@
-FROM gradle:8.14.2-jdk21-alpine AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
+# Use a slim Python image
+FROM python:3.12-slim
 
-RUN jlink \
-    --verbose \
-    --add-modules java.base,jdk.unsupported,java.desktop,java.instrument,java.logging,java.management,java.sql,java.xml \
-    --compress 2 --strip-debug --no-header-files --no-man-pages \
-    --output /opt/minimal-java
+# Create app dir
+WORKDIR /app
 
-RUN gradle build --no-daemon -x test
+# Install system deps for languagetool (Java not required; the python lib bundles server)
+# If your build later needs extra libs, add them here (apt-get update && apt-get install -y ...)
 
-FROM alpine:3
+# Copy and install Python deps first (better caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENV JAVA_HOME=/opt/minimal-java
-ENV PATH="$JAVA_HOME/bin:$PATH"
+# Copy app code
+COPY . .
 
-ENV CONFIG_PATH="/config"
+# Fly will map public port to this container port
+ENV PORT=8081
+EXPOSE 8081
 
-RUN mkdir /app
-# Copy the custom minimal JRE from the builder stage
-COPY --from=build "$JAVA_HOME" "$JAVA_HOME"
-COPY --from=build /home/gradle/src/build/libs/ /app/
-
-ENTRYPOINT ["java","-jar", "/app/coral-server-1.0-SNAPSHOT.jar"]
+# Run via gunicorn + uvicorn worker
+CMD ["gunicorn","-k","uvicorn.workers.UvicornWorker","api:app","--bind","0.0.0.0:8081"]
